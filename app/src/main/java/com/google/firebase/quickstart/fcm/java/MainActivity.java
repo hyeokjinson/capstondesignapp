@@ -25,7 +25,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -52,12 +54,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         WebView webView = (WebView) findViewById(R.id.webView);
-        webView.setPadding(0, 0, 0, 0);
-        webView.getSettings().setBuiltInZoomControls(false);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
-        String url = "http://192.168.0.2:8090/javascript_simple.html";
+
+        String url ="http://192.168.0.2:8080/stream/video.mjpeg";
         webView.loadUrl(url);
         Button btnMove = (Button) findViewById(R.id.btnMove);
         //TextView recieveText = (TextView) findViewById(R.id.Text_car);
