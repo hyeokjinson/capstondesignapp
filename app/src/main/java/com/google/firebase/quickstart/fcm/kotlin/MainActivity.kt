@@ -11,8 +11,7 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.quickstart.fcm.R
-import kotlinx.android.synthetic.main.activity_main.logTokenButton
-import kotlinx.android.synthetic.main.activity_main.subscribeButton
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -46,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         }
         // [END handle_data_extras]
 
-        subscribeButton.setOnClickListener {
+        /*subscribeButton.setOnClickListener {
             Log.d(TAG, "Subscribing to weather topic")
             // [START subscribe_topics]
             FirebaseMessaging.getInstance().subscribeToTopic("weather")
@@ -60,8 +59,8 @@ class MainActivity : AppCompatActivity() {
                     }
             // [END subscribe_topics]
         }
-
-        logTokenButton.setOnClickListener {
+*/
+        /*logTokenButton.setOnClickListener {
             // Get token
             // [START retrieve_current_token]
             FirebaseInstanceId.getInstance().instanceId
@@ -81,7 +80,7 @@ class MainActivity : AppCompatActivity() {
                     })
             // [END retrieve_current_token]
         }
-
+    */
         Toast.makeText(this, "See README for setup instructions", Toast.LENGTH_SHORT).show()
     }
 

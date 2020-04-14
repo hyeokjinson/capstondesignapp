@@ -10,13 +10,10 @@ class EntryChoiceActivity : BaseEntryChoiceActivity() {
     override fun getChoices(): List<Choice> {
         return kotlin.collections.listOf(
                 Choice(
-                        "Java",
-                        "Run the Firebase Cloud Messaging quickstart written in Java.",
-                        Intent(this, MainActivity::class.java)),
-                Choice(
-                        "Kotlin",
-                        "Run the Firebase Cloud Messaging written in Kotlin.",
-                        Intent(this, com.google.firebase.quickstart.fcm.kotlin.MainActivity::class.java))
+                        "차량 주변확인",
+                        "차량주변확인하여 차량제어를 하십시오",
+                        Intent(this, MainActivity::class.java))
+
         )
     }
 }
