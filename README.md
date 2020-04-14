@@ -1,4 +1,4 @@
-Firebase Cloud Messaging Quickstart
+Firebase Cloud Messaging & person identify
 ==============================
 
 The Firebase Cloud Messaging Android Quickstart app demonstrates registering
