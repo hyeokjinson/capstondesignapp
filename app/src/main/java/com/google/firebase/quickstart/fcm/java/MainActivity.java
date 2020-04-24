@@ -61,13 +61,43 @@ public class MainActivity extends AppCompatActivity {
         String url ="http://192.168.0.2:8080/stream/video.mjpeg";
         webView.loadUrl(url);
         Button btnMove = (Button) findViewById(R.id.btnMove);
+        Button btnParking=(Button) findViewById(R.id.btnParking);
+        Button btnStop=(Button)findViewById(R.id.btnStop);
+        //btnParking.setOnClickListener();
         //TextView recieveText = (TextView) findViewById(R.id.Text_car);
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String port = "50000";
+                String ip = "192.168.0.2";
+                String stop = "p";
+                MyClientTask myClientTask = new MyClientTask(ip.toString(), Integer.parseInt(port), stop.toString());
+                myClientTask.execute();
+            }
+        });
+        btnParking.setOnClickListener(new View.OnClickListener() {
+            @Override
+
+
+
+                public void onClick (View v){
+
+                    String port = "50000";
+                    String ip = "192.168.0.2";
+                    String park = "i";
+                    MyClientTask myClientTask = new MyClientTask(ip.toString(), Integer.parseInt(port), park.toString());
+                    myClientTask.execute();
+
+                }
+
+        });
         btnMove.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                String port = "8888";
+
+                String port = "50000";
                 String ip = "192.168.0.2";
-                String park = "parking";
-                MyClientTask myClientTask = new MyClientTask(ip.toString(), Integer.parseInt(port), park.toString());
+                String move = "o";
+                MyClientTask myClientTask = new MyClientTask(ip.toString(), Integer.parseInt(port), move.toString());
                 myClientTask.execute();
             }
         });
@@ -187,43 +217,44 @@ public class MainActivity extends AppCompatActivity {
 
             Socket socket = null;
             myMessage = myMessage.toString();
-            try {
-                socket = new Socket(dstAddress, dstPort);
-                //송신
-                OutputStream out = socket.getOutputStream();
-                out.write(myMessage.getBytes());
 
-                //수신
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                InputStream inputStream = socket.getInputStream();
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
-                    response += byteArrayOutputStream.toString("UTF-8");
-                }
-                response = "response: " + response;
+                try {
+                    socket = new Socket(dstAddress, dstPort);
+                    //송신
+                    OutputStream out = socket.getOutputStream();
+                    out.write(myMessage.getBytes());
 
-            } catch (UnknownHostException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                response = "UnknownHostException: " + e.toString();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                response = "IOException: " + e.toString();
-            } finally {
-                if (socket != null) {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                    //수신
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    InputStream inputStream = socket.getInputStream();
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        byteArrayOutputStream.write(buffer, 0, bytesRead);
+                        response += byteArrayOutputStream.toString("UTF-8");
+                    }
+                    response = "response: " + response;
+
+                } catch (UnknownHostException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                    response = "UnknownHostException: " + e.toString();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                    response = "IOException: " + e.toString();
+                } finally {
+                    if (socket != null) {
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
                     }
                 }
+                return null;
             }
-            return null;
-        }
 
         protected void onPostExecute(Void result) {
             //reciveText.setText(response);

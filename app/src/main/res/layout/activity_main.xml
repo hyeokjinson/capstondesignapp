@@ -28,4 +28,10 @@
         android:layout_height="wrap_content"
         android:text="자율주차"/>
 
+    <Button
+        android:id="@+id/btnStop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="정지" />
+
 </LinearLayout>
