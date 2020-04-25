@@ -34,4 +34,31 @@
         android:layout_height="wrap_content"
         android:text="정지" />
 
+    <TextView
+        android:id="@+id/output"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TextView" />
+    <TextView
+        android:id="@+id/text1"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="IP 주소 입력 후 Connect 버튼을 눌러 연결을 시도하세요." />
+
+    <EditText
+        android:layout_gravity="center"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/ipText"
+        android:text="192.168.0.2"/>
+    <Button
+        android:layout_weight="1"
+        android:layout_gravity="center"
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect"
+        android:enabled="true"/>
+
 </LinearLayout>

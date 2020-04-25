@@ -1,23 +1,9 @@
-/**
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package com.google.firebase.quickstart.fcm.java;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,10 +11,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -42,13 +30,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class MainActivity extends AppCompatActivity {
+    public Button ConnButton;
+    public Button btnMove;
+    public Button btnParking;
+    public Button btnStop;
+    private Socket socket;
 
     private static final String TAG = "MainActivity";
-    Button btnMove;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,47 +52,62 @@ public class MainActivity extends AppCompatActivity {
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
 
-        String url ="http://192.168.0.2:8080/stream/video.mjpeg";
+        String url = "http://192.168.0.2:8080/stream/video.mjpeg";
         webView.loadUrl(url);
-        Button btnMove = (Button) findViewById(R.id.btnMove);
-        Button btnParking=(Button) findViewById(R.id.btnParking);
-        Button btnStop=(Button)findViewById(R.id.btnStop);
-        //btnParking.setOnClickListener();
-        //TextView recieveText = (TextView) findViewById(R.id.Text_car);
-        btnStop.setOnClickListener(new View.OnClickListener() {
+        ConnButton = findViewById(R.id.button1);
+        btnMove = findViewById(R.id.btnMove);
+        btnParking = findViewById(R.id.btnParking);
+        btnStop = findViewById(R.id.btnStop);
+        final EditText ipNumber = findViewById(R.id.ipText);
+        ConnButton.setOnClickListener(new Button.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                String port = "50000";
-                String ip = "192.168.0.2";
-                String stop = "p";
-                MyClientTask myClientTask = new MyClientTask(ip.toString(), Integer.parseInt(port), stop.toString());
-                myClientTask.execute();
+            public void onClick(View view) {
+                Toast.makeText(getApplicationContext(), "Connect 시도", Toast.LENGTH_SHORT).show();
+                String addr = ipNumber.getText().toString().trim();
+                ConnectThread thread = new ConnectThread(addr);
+
+                //키보드 자동 내리기
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(ipNumber.getWindowToken(), 0);
+
+                thread.start();
+
+
             }
         });
-        btnParking.setOnClickListener(new View.OnClickListener() {
+        //btnParking.setOnClickListener();
+        //TextView recieveText = (TextView) findViewById(R.id.Text_car);
+        btnMove.setOnClickListener(new Button.OnClickListener() {
             @Override
+            public void onClick(View view) {
+                MoveThread sthread = new MoveThread();
+                btnMove.setEnabled(false);
+                btnParking.setEnabled(true);
+                btnStop.setEnabled(true);
+                sthread.start();
 
-
-
-                public void onClick (View v){
-
-                    String port = "50000";
-                    String ip = "192.168.0.2";
-                    String park = "i";
-                    MyClientTask myClientTask = new MyClientTask(ip.toString(), Integer.parseInt(port), park.toString());
-                    myClientTask.execute();
-
-                }
-
+            }
         });
-        btnMove.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
+        btnParking.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ParkThread sthread = new ParkThread();
+                btnMove.setEnabled(true);
+                btnParking.setEnabled(false);
+                btnStop.setEnabled(true);
+                sthread.start();
 
-                String port = "50000";
-                String ip = "192.168.0.2";
-                String move = "o";
-                MyClientTask myClientTask = new MyClientTask(ip.toString(), Integer.parseInt(port), move.toString());
-                myClientTask.execute();
+            }
+        });
+        btnStop.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                StopThread sthread = new StopThread();
+                btnMove.setEnabled(true);
+                btnParking.setEnabled(true);
+                btnStop.setEnabled(false);
+                sthread.start();
+
             }
         });
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -199,68 +208,228 @@ public class MainActivity extends AppCompatActivity {
 
                 });
     }
-    public class MyClientTask extends AsyncTask<Void, Void, Void> {
-        String dstAddress;
-        int dstPort;
-        String response = "";
-        String myMessage = "parking";
 
-        //constructor
-        MyClientTask(String addr, int port, String message) {
-            dstAddress = addr;
-            dstPort = port;
-            myMessage = message;
+    class MoveThread extends Thread {
+
+        int bytes;
+        String Dtmp;
+        int dlen;
+
+        public MoveThread() {
+
 
         }
 
-        protected Void doInBackground(Void... arg0) {
 
-            Socket socket = null;
-            myMessage = myMessage.toString();
+        public String byteArrayToHex(byte[] a) {
+            StringBuilder sb = new StringBuilder();
+            for (final byte b : a)
+                sb.append(String.format("%02x ", b & 0xff));
+            return sb.toString();
+        }
 
-                try {
-                    socket = new Socket(dstAddress, dstPort);
-                    //송신
-                    OutputStream out = socket.getOutputStream();
-                    out.write(myMessage.getBytes());
+        public void run() {
 
-                    //수신
-                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    InputStream inputStream = socket.getInputStream();
-                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                        byteArrayOutputStream.write(buffer, 0, bytesRead);
-                        response += byteArrayOutputStream.toString("UTF-8");
-                    }
-                    response = "response: " + response;
+            // 데이터 송신
+            try {
 
-                } catch (UnknownHostException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                    response = "UnknownHostException: " + e.toString();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                    response = "IOException: " + e.toString();
-                } finally {
-                    if (socket != null) {
-                        try {
-                            socket.close();
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                return null;
+                String OutData = "o\n";
+                byte[] data = OutData.getBytes();
+                OutputStream output = socket.getOutputStream();
+                output.write(data);
+                Log.d(TAG, "move\\n COMMAND 송신");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.d(TAG, "데이터 송신 오류");
             }
 
-        protected void onPostExecute(Void result) {
-            //reciveText.setText(response);
-            super.onPostExecute(result);
+            // 데이터 수신
+            try {
+                Log.d(TAG, "데이터 수신 준비");
+
+                //TODO:수신 데이터(프로토콜) 처리
+
+                while (true) {
+                    byte[] buffer = new byte[1024];
+
+                    InputStream input = socket.getInputStream();
+
+                    bytes = input.read(buffer);
+                    Log.d(TAG, "byte = " + bytes);
+
+                    //바이트 헥사(String)로 바꿔서 Dtmp String에 저장.
+                    Dtmp = byteArrayToHex(buffer);
+                    Dtmp = Dtmp.substring(0, bytes * 3);
+                    Log.d(TAG, Dtmp);
+
+
+                    //프로토콜 나누기
+                    String[] DSplit = Dtmp.split("a5 5a"); // sync(2byte) 0xA5, 0x5A
+                    Dtmp = "";
+                    for (int i = 1; i < DSplit.length - 1; i++) { // 제일 처음과 끝은 잘림. 데이터 버린다.
+                        Dtmp = Dtmp + DSplit[i] + "\n";
+                    }
+                    dlen = DSplit.length - 2;
+
+
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+
+                        }
+                    });
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e(TAG, "수신 에러");
+            }
+
+
+        }
+
+    }
+
+    // fixme: Stop 버튼 클릭 시 데이터 송신.
+    class StopThread extends Thread {
+
+
+        public StopThread() {
+        }
+
+        public void run() {
+
+            // 데이터 송신
+            try {
+
+                String OutData = "p\n";
+                byte[] data = OutData.getBytes();
+                OutputStream output = socket.getOutputStream();
+                output.write(data);
+                Log.d(TAG, "Stop\\n COMMAND 송신");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+    }
+    class ParkThread extends Thread {
+
+
+        public ParkThread() {
+        }
+
+        public void run() {
+
+            // 데이터 송신
+            try {
+
+                String OutData = "i\n";
+                byte[] data = OutData.getBytes();
+                OutputStream output = socket.getOutputStream();
+                output.write(data);
+                Log.d(TAG, "parking\\n ");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+    }
+
+    // fixme: Socket Connect.
+    class ConnectThread extends Thread {
+        String hostname;
+
+        public ConnectThread(String addr) {
+            hostname = addr;
+        }
+
+        public void run() {
+            try { //클라이언트 소켓 생성
+
+                int port = 50000;
+                socket = new Socket(hostname, port);
+                Log.d(TAG, "Socket 생성, 연결.");
+
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        InetAddress addr = socket.getInetAddress();
+                        String tmp = addr.getHostAddress();
+                        Toast.makeText(getApplicationContext(), "Connected", Toast.LENGTH_LONG).show();
+                        btnStop.setEnabled(true);
+                        btnParking.setEnabled(true);
+                        ConnButton.setEnabled(false);
+                        btnMove.setEnabled(true);
+                    }
+                });
+
+
+            } catch (UnknownHostException uhe) { // 소켓 생성 시 전달되는 호스트(www.unknown-host.com)의 IP를 식별할 수 없음.
+
+                Log.e(TAG, " 생성 Error : 호스트의 IP 주소를 식별할 수 없음.(잘못된 주소 값 또는 호스트 이름 사용)");
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "Error : 호스트의 IP 주소를 식별할 수 없음.(잘못된 주소 값 또는 호스트 이름 사용)", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            } catch (IOException ioe) { // 소켓 생성 과정에서 I/O 에러 발생.
+
+                Log.e(TAG, " 생성 Error : 네트워크 응답 없음");
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "Error : 네트워크 응답 없음", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+
+            } catch (SecurityException se) { // security manager에서 허용되지 않은 기능 수행.
+
+                Log.e(TAG, " 생성 Error : 보안(Security) 위반에 대해 보안 관리자(Security Manager)에 의해 발생. (프록시(proxy) 접속 거부, 허용되지 않은 함수 호출)");
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "Error : 보안(Security) 위반에 대해 보안 관리자(Security Manager)에 의해 발생. (프록시(proxy) 접속 거부, 허용되지 않은 함수 호출)", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+
+            } catch (IllegalArgumentException le) { // 소켓 생성 시 전달되는 포트 번호(65536)이 허용 범위(0~65535)를 벗어남.
+
+                Log.e(TAG, " 생성 Error : 메서드에 잘못된 파라미터가 전달되는 경우 발생.(0~65535 범위 밖의 포트 번호 사용, null 프록시(proxy) 전달)");
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), " Error : 메서드에 잘못된 파라미터가 전달되는 경우 발생.(0~65535 범위 밖의 포트 번호 사용, null 프록시(proxy) 전달)", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+
+            }
+
+
         }
     }
 
+    @Override
+    protected void onStop() {  //앱 종료시
+        super.onStop();
+        try {
+            socket.close(); //소켓을 닫는다.
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
+
+
+
+
+
 
